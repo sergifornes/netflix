@@ -1,0 +1,21 @@
+---
+title: "Práctica Netflix"
+subtitle: "Tecnologías para el Análisis de Datos Masivos"
+author: "Daniel Ramos & Sergi Fornés"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Importación y limpieza de los datos
+
+## Información sobre el Raw data
+
+## Obtención de las peliculas de interés
+
+## Creación del data frame
+
+# Análisis exploratorio de los datos
