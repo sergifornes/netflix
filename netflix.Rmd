@@ -14,7 +14,7 @@ library(tidyverse)
 
 ## Información sobre el Raw data
 
-Vamos a realizar el análisis a partir de datos sobre valoraciones de películas de Netflix. Los datos que nos pueden resultar más interesantes son las notas de las valoraciones y la identificación de quien hace estas valoraciones.
+Vamos a realizar el análisis a partir de datos sobre valoraciones de películas de Netflix. Los datos que nos pueden resultar más interesantes son las notas de las valoraciones, la cantidad de valoraciones que tiene cada película y la identificación de quien hace estas valoraciones.
 
 Obtenemos los datos a partir de 5 ficheros `.txt` y un `.csv`.
 
@@ -40,10 +40,54 @@ Columnas del fichero:
 
 ### `movie_titles.csv`
 
-En este archivo podemos encontrar información sobre las películas. Tenemos el ID de la película, su nombre en inglés y su año de estreno.
+En este archivo podemos encontrar información sobre las películas. Tenemos el ID de la película, su año de estreno y su nombre en inglés.
 
 ## Obtención de las peliculas de interés
 
+Decidimos las películas que vamos a analizar usando como semilla aleatoria nuestras dos últimas cifras del DNI.
+
+```{r}
+set.seed(3793)
+rand_pelis <- sort(sample(1:17770, 250, replace = FALSE))
+```
+
+Obtenemos del fichero `filas_ID_combined_all.txt` únicamente la información de las películas que nos ha tocado analizar.
+
+```{r}
+loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") %>%
+  filter(ID %in% rand_pelis)
+```
+
 ## Creación del data frame
+
+De cada uno de los archivos `combined_data_x.txt`, buscamos los datos de las películas que analizaremos y los metemos en un data frame, especificando en cada observación cual es la ID de la película.
+
+```{r}
+i <- 1
+df <- tibble()
+for(comb_data in 1:4){
+  file <- paste("../data/combined_data_", comb_data, ".txt", sep = "")
+  while(loc_pelis[i,5] == comb_data & i <= 250){
+    df_aux <- read_csv(file, col_names = FALSE, col_types = "iiD", skip = loc_pelis[[i,2]], n_max = loc_pelis[[i,4]] - loc_pelis[[i,2]]) %>%
+      mutate(ID = rand_pelis[i])
+    df <- rbind(df, df_aux)
+    i <- i + 1
+  }
+}
+```
+
+
+
+```{r}
+nombres_pelis <- read_csv("../data/movie_titles.csv",
+                          col_names = FALSE,
+                          col_types = "iic")
+
+# FALTA JUNTAR NOMBRES_PELIS Y DF Y DEJAR EL DATAFRAME BONITO
+
+write_csv(df, "../data/pelis.csv")
+
+rm(list=ls())
+```
 
 # Análisis exploratorio de los datos
