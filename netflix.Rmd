@@ -84,20 +84,19 @@ nombres_pelis <- read_tsv("../data/movie_titles.csv",
                       locale = readr::locale(encoding = "ISO-8859-1"),
                       col_names=FALSE)
 
-nombres_pelis <- nombres_pelis %>% separate(X1,",",into =c("ID_film","Date","Title"), extra="merge", convert = TRUE)
+nombres_pelis <- nombres_pelis %>% separate(X1,",",into =c("ID_film","Year","Title"), extra="merge", convert = TRUE)
 
-nombres_pelis$Date <- ifelse(nombres_pelis$Date == "NULL", NA,nombres_pelis$Date)
+nombres_pelis$Year <- ifelse(nombres_pelis$Year == "NULL", NA,nombres_pelis$Year)
+nombres_pelis <- nombres_pelis %>% mutate(Year = as.integer(Year))
 
 # FALTA JUNTAR NOMBRES_PELIS Y DF Y DEJAR EL DATAFRAME BONITO
-df_test <- df[10,]
-inner_join(nombres_pelis, df_test)
+
+df_final <- inner_join(nombres_pelis, df)
 
 
-write_csv(df, "../data/pelis.csv")
+write_csv(df_final, "../data/pelis.csv")
 
 #rm(list=ls())
-
-inner_join()
 ```
 
 # Análisis exploratorio de los datos
