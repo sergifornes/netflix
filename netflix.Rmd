@@ -79,15 +79,21 @@ for(comb_data in 1:4){
 
 
 ```{r}
-nombres_pelis <- read_csv("../data/movie_titles.csv",
-                          col_names = FALSE,
-                          col_types = "iic")
+# nombres_pelis <- read_csv("../data/movie_titles.csv",
+#                           col_names = FALSE,
+#                           col_types = "iic")
+
+nombres_pelis <- read_tsv("../data/movie_titles.csv",
+                      locale = readr::locale(encoding = "ISO-8859-1"),
+                      col_names=FALSE)
+
+nombres_pelis <- nombres_pelis %>% separate(X1,",",into =c("ID_film","Year","Title"), extra="merge")
 
 # FALTA JUNTAR NOMBRES_PELIS Y DF Y DEJAR EL DATAFRAME BONITO
 
-write_csv(df, "../data/pelis.csv")
+#write_csv(df, "../data/pelis.csv")
 
-rm(list=ls())
+#rm(list=ls())
 ```
 
 # Análisis exploratorio de los datos
