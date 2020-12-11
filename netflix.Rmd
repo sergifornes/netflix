@@ -96,7 +96,7 @@ df_final <- inner_join(nombres_pelis, df)
 
 write_csv(df_final, "../data/pelis.csv")
 
-#rm(list=ls())
+rm(list=ls())
 ```
 
 # Análisis exploratorio de los datos
