@@ -46,57 +46,56 @@ En este archivo podemos encontrar información sobre las películas. Tenemos el 
 
 Decidimos las películas que vamos a analizar usando como semilla aleatoria nuestras dos últimas cifras del DNI.
 
-```{r}
+```{r, eval = FALSE}
 set.seed(3793)
 rand_pelis <- sort(sample(1:17770, 250, replace = FALSE))
 ```
 
 Obtenemos del fichero `filas_ID_combined_all.txt` únicamente la información de las películas que nos ha tocado analizar.
 
-```{r}
+```{r, eval = FALSE}
 loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") %>%
   filter(ID %in% rand_pelis)
 ```
 
 ## Creación del data frame
 
-De cada uno de los archivos `combined_data_x.txt`, buscamos los datos de las películas que analizaremos y los metemos en un data frame, especificando en cada observación cual es la ID de la película.
+De cada uno de los archivos `combined_data_x.txt`, buscamos los datos de las películas que analizaremos y los metemos en un data frame, especificando en cada observación cual es el ID de la película.
 
-```{r}
+```{r, eval = FALSE}
 i <- 1
 df <- tibble()
 for(comb_data in 1:4){
   file <- paste("../data/combined_data_", comb_data, ".txt", sep = "")
-  while(loc_pelis[i,5] == comb_data & i <= 250){
-    df_aux <- read_csv(file, col_names = FALSE, col_types = "iiD", skip = loc_pelis[[i,2]], n_max = loc_pelis[[i,4]] - loc_pelis[[i,2]]) %>%
-      mutate(ID = rand_pelis[i])
+  while(loc_pelis[i,"data"] == comb_data & i <= 250){
+    df_aux <- read_csv(file,
+                       col_names = c("User","Score","Date"),
+                       col_types = "iiD",
+                       skip = loc_pelis[[i,"fila"]],
+                       n_max = loc_pelis[[i,"fila_final"]] - loc_pelis[[i,"fila"]]) %>%
+      mutate(ID_film = rand_pelis[i])
     df <- rbind(df, df_aux)
     i <- i + 1
   }
 }
-names(df) <- c("User","Score","Date","ID_film")
 ```
 
+Cargamos el fichero con los nombres de las películas, tenemos en cuenta que el nombre de la película puede llevar `,` y arreglamos los valores `NA`. Este nuevo data frame cuenta con el ID de cada película, por lo que podemos unirlo con el data frame de las valoraciones de los usuarios para ampliarlo con información sobre las películas. Después lo guardamos en un fichero `.csv` para poder cargarlo y analizarlo en la siguiente sección.
 
+```{r, eval = FALSE}
+names_pelis <- read_tsv("../data/movie_titles.csv",
+                        locale = readr::locale(encoding = "ISO-8859-1"),
+                        col_names = FALSE) %>%
+  separate(col = X1,
+           sep = ",",
+           into = c("ID_film","Release_Year","Title"),
+           extra = "merge",
+           convert = TRUE) %>%
+  mutate(Release_Year = ifelse(Release_Year == "NULL", NA, as.integer(Release_Year)))
 
-```{r}
-nombres_pelis <- read_tsv("../data/movie_titles.csv",
-                      locale = readr::locale(encoding = "ISO-8859-1"),
-                      col_names=FALSE)
+df <- inner_join(df, names_pelis)
 
-nombres_pelis <- nombres_pelis %>% separate(X1,",",into =c("ID_film","Year","Title"), extra="merge", convert = TRUE)
-
-nombres_pelis$Year <- ifelse(nombres_pelis$Year == "NULL", NA,nombres_pelis$Year)
-nombres_pelis <- nombres_pelis %>% mutate(Year = as.integer(Year))
-
-# FALTA JUNTAR NOMBRES_PELIS Y DF Y DEJAR EL DATAFRAME BONITO
-
-df_final <- inner_join(nombres_pelis, df)
-
-
-write_csv(df_final, "../data/pelis.csv")
-
-rm(list=ls())
+write_csv(df, "../data/pelis.csv")
 ```
 
 # Análisis exploratorio de los datos
