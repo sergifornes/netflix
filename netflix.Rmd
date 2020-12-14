@@ -1,13 +1,18 @@
 ---
 title: "Práctica Netflix"
-subtitle: "Tecnologías para el Análisis de Datos Masivos"
 author: "Daniel Ramos & Sergi Fornés"
-output: pdf_document
+subtitle: Tecnologías para el Análisis de Datos Masivos
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(lubridate)
+library(formattable)
+library(RColorBrewer)
 ```
 
 # Importación y limpieza de los datos
@@ -99,3 +104,148 @@ write_csv(df, "../data/pelis.csv")
 ```
 
 # Análisis exploratorio de los datos
+
+```{r, message = FALSE}
+data <- read_csv("../data/pelis.csv")
+
+str(data)
+```
+
+**Tipología de las variables:**
+
+* `User`: Se puede considerar esta variable como categórica, ya que es un identificador del usuario que ha realizado la valoración. Pero al haber tantos usuarios diferentes, la dejaremos como variable tipo `num`.
+
+* `Score`: Es una variable numérica que refleja la puntuación de la película de peor a mejor con valores enteros del 1 al 5. También podría ser considerada como una variable ordinal ya que sus valores son discretos, aunque para trabajar con ella es mejor dejarla tipo `num`.
+
+* `Date`: Es una variable tipo fecha, representa el día que se valoró la película.
+
+* `ID_film`: Esta variable tiene la misma forma que `User`, es decir, es una variable categórica que refleja la película valorada, pero la dejamos en formato `num`. Ya tenemos la variable `Title` para identificar las películas, por lo que realmente podríamos desechar esta variable. Pero es una manera más sencilla para acceder a las películas.
+
+* `Release_Year`: Podríamos tenerla en formato `Date`, pero al ser únicamente el año, es más cómodo usarla como una variable tipo `num`.
+
+* `Title`: Es claramente una variable categórica que representa el título de la película en formato `character`.
+
+# PREGUNTA2
+```{r}
+data %>%
+  group_by(Release_Year, Title) %>%
+  summarise() %>%
+  ggplot() +
+  geom_histogram(aes(x = Release_Year), binwidth = 1, fill = "darkblue", col = "white") +
+  xlab("Año") +
+  ylab("Frecuencia") +
+  ggtitle("Películas estrenadas por año")
+# FALTA METER MÁS AÑOS EN EL EJE X (CADA 10 AÑOS)
+```
+
+# PREGUNTA3
+```{r}
+data <- data %>%
+  mutate(Year_D = year(Date),
+         Month_D = factor(month(Date),
+                          levels = c(1,2,3,4,5,6,7,8,9,10,11,12),
+                          labels = c("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")),
+         Day_D = day(Date),
+         Week_D = week(Date),
+         # tenemos en cuenta que el primer dia de la semana es Domingo en vez de Lunes
+         Day_of_week_D = factor(wday(Date),
+                                levels = c(1,2,3,4,5,6,7),
+                                labels = c("Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado")))
+```
+
+# PREGUNTA4
+```{r}
+films_table <- data %>%
+  group_by(Title) %>%
+  summarise(count = n(),
+            sum_scores = sum(Score),
+            mean_scores = round(mean(Score), 2),
+            median_scores = median(Score),
+            mode_scores = unique(Score)[which.max(tabulate(match(Score, unique(Score))))],
+            sd_scores = round(sd(Score), 2))
+  # es necesario instalar el paquete "formattable"
+films_table %>%
+  formattable(align = c("l","c","c","c","c", "c", "c"),
+              list(mean_scores = color_tile("#FF7F7F", "#71CA97"),
+                   count = color_bar("lightgrey"),
+                   sd_scores = color_tile("white", "lightblue")),
+              col.names = c("Título","Cantidad de Valoraciones", "Suma de Valoraciones", "Media", "Mediana", "Moda", "Desviación Típica"))
+```
+
+# PREGUNTA5
+```{r}
+top5 <- films_table %>%
+  top_n(5, count)
+
+# barras
+data %>%
+  filter(Title %in% top5$Title) %>%
+  ggplot() +
+  geom_bar(aes(x = Score, fill = Title), position = "dodge") +
+  xlab("Puntuación") +
+  ylab("Frecuencia") +
+  ggtitle("Distribución de puntuaciones de las 5 películas más valoradas",
+          "Diagrama de barras") +
+  guides(fill = guide_legend(title = "Título"))
+
+# cajas y bigotes
+data %>%
+  filter(Title %in% top5$Title) %>%
+  ggplot() +
+  geom_boxplot(aes(x = Title, y = Score)) +
+  xlab("Título") +
+  ylab("Puntuación") +
+  ggtitle("Distribución de puntuaciones de las 5 películas más valoradas",
+          "Diagrama de cajas y bigotes")
+
+# mapa de calor
+data %>%
+  filter(Title %in% top5$Title) %>%
+  count(Title, Score) %>%
+  ggplot() +
+  geom_tile(aes(x = Score, y = Title, fill = n)) +
+  scale_fill_gradient(low="yellow", high="red") +
+  xlab("Puntuación") +
+  ylab("Título") +
+  ggtitle("Distribución de puntuaciones de las 5 películas más valoradas",
+          "Mapa de calor") +
+  guides(fill = guide_legend(title = "Nº de Valoraciones"))
+```
+
+COMENTARIO: Los 2 primeros gráficos se ven mal debido a que la variable puntuación es discreta. Con el mapa de calor se visualiza mejor.
+
+# PREGUNTA6
+COMENTARIO: Primero analizaremos la cantidad de valoraciones, y luego si los valores de estas cambian segun la fecha. 
+```{r}
+ggplot(data) +
+  geom_bar(aes(x = Day_of_week_D), fill = "darkblue", col = "white") +
+  xlab("Día de la semana") +
+  ylab("Frecuencia") +
+  ggtitle("Distribución de las puntuaciones por día de la semana")
+
+ggplot(data) +
+  geom_bar(aes(x = Day_of_week_D, fill = as.factor(Score)), position = "fill") +
+  xlab("Día de la semana") +
+  ylab("Proporción") +
+  ggtitle("Distribución de los valores de las puntuaciones por día de la semana") +
+  guides(fill = guide_legend(title = "Valoraciones")) +
+    scale_fill_manual(values=brewer.pal(n = 5, name = "YlGnBu"))
+
+ggplot(data) +
+  geom_bar(aes(x = Month_D), fill = "darkblue", col = "white") +
+  xlab("Mes") +
+  ylab("Frecuencia") +
+  ggtitle("Distribución de las puntuaciones por mes") +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+
+ggplot(data) +
+  geom_bar(aes(x = Month_D, fill = as.factor(Score)), position = "fill") +
+  xlab("Mes") +
+  ylab("Proporción") +
+  ggtitle("Distribución de los valores de las puntuaciones por mes") +
+  guides(fill = guide_legend(title = "Valoraciones")) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) +
+  scale_fill_manual(values=brewer.pal(n = 5, name = "YlGnBu"))
+```
+
+# PREGUNTA7
