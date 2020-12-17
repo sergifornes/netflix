@@ -191,7 +191,7 @@ Se ha usado el paquete `formattable` para personalizar la tabla:
 
 * *Desviación Típica*: El color de la desviación típica se verá con mayor intensidad cuando el valor sea alto, mientras que a penas será perceptible cuando el valor sea bajo.
 
-```{r, echo = F, max.height='100px'}
+```{r, echo = T, max.height='100px'}
   # es necesario instalar el paquete "formattable"
 films_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c"),
@@ -207,11 +207,11 @@ films_table %>%
 
 Se realizan una serie de gráficos con el fin de observar de la mejor manera posible la distribución de las puntuaciones de las 5 películas más valoradas. Se ha creado un gráfico de barras agrupadas, un diagrama de cajas y bigotes y un mapa de calor.
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 top5 <- films_table %>%
   top_n(5, count)
 
-# barras
+# Barras
 data %>%
   filter(Title %in% top5$Title) %>%
   ggplot() +
@@ -225,8 +225,8 @@ data %>%
 
 En el gráfico anterior se observa como las puntuaciones positivas predominan sobre las negativas. Sería más interesante realizar y comparar gráficos de densidades, pero la puntuación contiene valores discretos, por lo que no es posible realizarlos.
 
-```{r, echo = FALSE}
-# cajas y bigotes
+```{r, echo = TRUE}
+# Cajas y bigotes
 data %>%
   filter(Title %in% top5$Title) %>%
   ggplot() +
@@ -239,8 +239,8 @@ data %>%
 
 Con el diagrama de cajas y bigotes se pueden observar claramente las posiciones de los cuartiles, aunque la visualización es un poco extraña debido al problema anteriormente mencionado de valores discretos.
 
-```{r, echo = FALSE}
-# mapa de calor
+```{r, echo = TRUE}
+# Mapa de calor
 data %>%
   filter(Title %in% top5$Title) %>%
   count(Title, Score) %>%
@@ -258,30 +258,44 @@ Usando un mapa de calor se visualiza la distribución de las puntuaciones de una
 
 \
 
-#### PREGUNTA6
-COMENTARIO: Primero analizaremos la cantidad de valoraciones, y luego si los valores de estas cambian segun la fecha. 
+#### Distribución de valoraciones por día de la semana y mes
+
+En primer lugar se analiza la cantidad de valoraciones, y posteriormente si los valores de estas cambian según la fecha. 
 ```{r}
 ggplot(data) +
   geom_bar(aes(x = Day_of_week_D), fill = "darkblue", col = "white") +
   xlab("Día de la semana") +
   ylab("Frecuencia") +
   ggtitle("Distribución de las puntuaciones por día de la semana")
+```
 
+En el gráfico anterior se puede observar que de lunes a viernes se puntuan más películas que durante el fin de semana. Una de las posibles causas es que durante el fin de semana los usuarios vean las películas acompañados por un grupo de amigos o tengan planes al acabar la película y por tanto no valoren la película al final de su visualización.
+
+```{r}
 ggplot(data) +
   geom_bar(aes(x = Day_of_week_D, fill = as.factor(Score)), position = "fill") +
   xlab("Día de la semana") +
   ylab("Proporción") +
-  ggtitle("Distribución de los valores de las puntuaciones por día de la semana") +
+  ggtitle("Distribución de los valores 
+          de las puntuaciones por día de la semana") +
   guides(fill = guide_legend(title = "Valoraciones")) +
     scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
+```
 
+Como se puede observar, el dia de la semana en la cual se visiona la película no tiene efecto sobre tu puntuación.
+
+```{r}
 ggplot(data) +
   geom_bar(aes(x = Month_D), fill = "darkblue", col = "white") +
   xlab("Mes") +
   ylab("Frecuencia") +
   ggtitle("Distribución de las puntuaciones por mes") +
   theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
 
+En este gráfico se puede observar que el periodo en que más películas se ha puntuado es durante verano, este resultado es congruente ya que en verano normalmente la gente suele estar de vacaciones y tiene más tiempo para ver películas y puntuarlas.
+
+```{r}
 ggplot(data) +
   geom_bar(aes(x = Month_D, fill = as.factor(Score)), position = "fill") +
   xlab("Mes") +
@@ -292,15 +306,24 @@ ggplot(data) +
   scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
 ```
 
-# PREGUNTA7
+Mientras que el día de la semana en que se puntuó la película no afectaba a la puntuación, aquí se observa que desde junio hasta final de año la puntuación de las películas es más generosa. Por tanto, el mes en el que se puntuó la película tiene un efecto sobre la puntuación.
+
+\
+
+#### Tabla agrupada por película y año del número de valoraciones
+
+Primero se genera una tabla con las 250 película y sus puntuaciones distribuidas desde 1999 hasta 2005.
 ```{r}
 frec_table <- as.data.frame.matrix(table(data$Title, data$Year_D)) %>%
   rownames_to_column("Título")
 
 frec_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c", "c"))
+```
 
+A continuación se escogen las diez películas con mayor número de valoraciones y se representa mediante un gráfico de calor:
 
+```{r}
 top10 <- frec_table %>%
   mutate(total = rowSums(.[2:8])) %>%
   top_n(10, total)
@@ -317,8 +340,9 @@ top10 %>%
   guides(fill = guide_legend(title = "Nº de Valoraciones"))
 ```
 
-# PREGUNTA8
-```{r}
+#### Distribución del `score` promedio por año de las 10 películas con mayor número de valoraciones
+
+```{r, message = FALSE}
 data %>%
   filter(Title %in% top10$Título) %>%
   group_by(Title, Year_D) %>%
