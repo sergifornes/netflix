@@ -48,14 +48,14 @@ En este archivo podemos encontrar información sobre las películas. Tenemos el 
 
 Decidimos las películas que vamos a analizar usando como semilla aleatoria nuestras dos últimas cifras del DNI concatenadas.
 
-```{r, eval = FALSE}
+```{r random, eval = FALSE}
 set.seed(3793)
 rand_pelis <- sort(sample(1:17770, 250, replace = FALSE))
 ```
 
 Obtenemos del fichero `filas_ID_combined_all.txt` únicamente la información de las películas que nos ha tocado analizar.
 
-```{r, eval = FALSE}
+```{r loc_pelis, eval = FALSE}
 loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") %>%
   filter(ID %in% rand_pelis)
 ```
@@ -64,7 +64,7 @@ loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") 
 
 De cada uno de los archivos `combined_data_x.txt`, buscamos los datos de las películas que analizaremos y los metemos en un data frame, especificando en cada observación cual es el ID de la película valorada.
 
-```{r, eval = FALSE}
+```{r search, eval = FALSE}
 i <- 1
 df <- tibble()
 for(comb_data in 1:4){
@@ -84,7 +84,7 @@ for(comb_data in 1:4){
 
 Cargamos el fichero con los nombres de las películas, teniendo en cuenta que el nombre de la película puede llevar `,`, y arreglamos los valores `NA`. Este nuevo data frame cuenta con el ID de cada película, por lo que podemos unirlo con el data frame de las valoraciones de los usuarios para ampliarlo con información sobre las películas. Después lo guardamos en un archivo `.csv` para poder cargarlo y analizarlo en la siguiente sección.
 
-```{r, eval = FALSE}
+```{r write, eval = FALSE}
 names_pelis <- read_tsv("../data/movie_titles.csv",
                         locale = readr::locale(encoding = "ISO-8859-1"),
                         col_names = FALSE) %>%
@@ -106,7 +106,7 @@ write_csv(df, "./model_netflix/pelis.csv")
 
 Antes de empezar con el análisis, cargamos el data frame anteriormente creado y comprobamos que las variables estan en el formato correcto. 
 
-```{r, message = FALSE}
+```{r load, message = FALSE}
 data <- read_csv("./model_netflix/pelis.csv")
 
 str(data)
@@ -130,7 +130,7 @@ str(data)
 
 #### Distribución de películas estrenadas por año
 
-```{r, message = FALSE, echo = FALSE}
+```{r movie_distr, message = FALSE, echo = FALSE}
 data %>%
   group_by(Release_Year, Title) %>%
   summarise() %>%
@@ -150,7 +150,7 @@ En el gráfico anterior vemos una tendencia creciente de las películas estrenad
 
 A continuación, creamos nuevas variables temporales a partir de la fecha de valoración `Date`. Para cada valoración tendremos el año, el mes, el día, la semana y el día de la semana.
 
-```{r}
+```{r temp_variables}
 data <- data %>%
   mutate(Year_D = year(Date),
          Month_D = factor(month(Date),
@@ -172,7 +172,7 @@ data <- data %>%
 
 Creamos una tabla con los estadísticos principales de cada película.
 
-```{r, message = FALSE}
+```{r films_table, message = FALSE}
 films_table <- data %>%
   group_by(Title) %>%
   summarise(count = n(),
@@ -191,7 +191,7 @@ Se ha usado el paquete `formattable` para personalizar la tabla:
 
 * *Desviación Típica*: El color de la desviación típica se verá con mayor intensidad cuando el valor sea alto, mientras que a penas será perceptible cuando el valor sea bajo.
 
-```{r, echo = T, max.height='100px'}
+```{r formattable, echo = T, max.height='100px'}
   # es necesario instalar el paquete "formattable"
 films_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c"),
@@ -207,7 +207,7 @@ films_table %>%
 
 Se realizan una serie de gráficos con el fin de observar de la mejor manera posible la distribución de las puntuaciones de las 5 películas más valoradas. Se ha creado un gráfico de barras agrupadas, un diagrama de cajas y bigotes y un mapa de calor.
 
-```{r, echo = TRUE}
+```{r barplot, echo = TRUE}
 top5 <- films_table %>%
   top_n(5, count)
 
@@ -225,7 +225,7 @@ data %>%
 
 En el gráfico anterior se observa como las puntuaciones positivas predominan sobre las negativas. Sería más interesante realizar y comparar gráficos de densidades, pero la puntuación contiene valores discretos, por lo que no es posible realizarlos.
 
-```{r, echo = TRUE}
+```{r boxplot, echo = TRUE}
 # Cajas y bigotes
 data %>%
   filter(Title %in% top5$Title) %>%
@@ -239,7 +239,7 @@ data %>%
 
 Con el diagrama de cajas y bigotes se pueden observar claramente las posiciones de los cuartiles, aunque la visualización es un poco extraña debido al problema anteriormente mencionado de valores discretos.
 
-```{r, echo = TRUE}
+```{r tile, echo = TRUE}
 # Mapa de calor
 data %>%
   filter(Title %in% top5$Title) %>%
@@ -261,7 +261,7 @@ Usando un mapa de calor se visualiza la distribución de las puntuaciones de una
 #### Distribución de valoraciones por día de la semana y mes
 
 En primer lugar se analiza la cantidad de valoraciones, y posteriormente si los valores de estas cambian según la fecha. 
-```{r}
+```{r day_bar_1}
 ggplot(data) +
   geom_bar(aes(x = Day_of_week_D), fill = "darkblue", col = "white") +
   xlab("Día de la semana") +
@@ -271,7 +271,7 @@ ggplot(data) +
 
 En el gráfico anterior se puede observar que de lunes a viernes se puntuan más películas que durante el fin de semana. Una de las posibles causas es que durante el fin de semana los usuarios vean las películas acompañados por un grupo de amigos o tengan planes al acabar la película y por tanto no valoren la película al final de su visualización.
 
-```{r}
+```{r day_bar_2}
 ggplot(data) +
   geom_bar(aes(x = Day_of_week_D, fill = as.factor(Score)), position = "fill") +
   xlab("Día de la semana") +
@@ -284,7 +284,7 @@ ggplot(data) +
 
 Como se puede observar, el dia de la semana en la cual se visiona la película no tiene efecto sobre tu puntuación.
 
-```{r}
+```{r month_bar_1}
 ggplot(data) +
   geom_bar(aes(x = Month_D), fill = "darkblue", col = "white") +
   xlab("Mes") +
@@ -295,7 +295,7 @@ ggplot(data) +
 
 En este gráfico se puede observar que el periodo en que más películas se ha puntuado es durante verano, este resultado es congruente ya que en verano normalmente la gente suele estar de vacaciones y tiene más tiempo para ver películas y puntuarlas.
 
-```{r}
+```{r month_bar_2}
 ggplot(data) +
   geom_bar(aes(x = Month_D, fill = as.factor(Score)), position = "fill") +
   xlab("Mes") +
@@ -313,7 +313,7 @@ Mientras que el día de la semana en que se puntuó la película no afectaba a l
 #### Tabla agrupada por película y año del número de valoraciones
 
 Primero se genera una tabla con las 250 película y sus puntuaciones distribuidas desde 1999 hasta 2005.
-```{r}
+```{r frec_table}
 frec_table <- as.data.frame.matrix(table(data$Title, data$Year_D)) %>%
   rownames_to_column("Título")
 
@@ -323,7 +323,7 @@ frec_table %>%
 
 A continuación se escogen las diez películas con mayor número de valoraciones y se representa mediante un gráfico de calor:
 
-```{r}
+```{r top10_tile}
 top10 <- frec_table %>%
   mutate(total = rowSums(.[2:8])) %>%
   top_n(10, total)
@@ -342,7 +342,7 @@ top10 %>%
 
 #### Distribución del `score` promedio por año de las 10 películas con mayor número de valoraciones
 
-```{r, message = FALSE}
+```{r score_dist, message = FALSE}
 data %>%
   filter(Title %in% top10$Título) %>%
   group_by(Title, Year_D) %>%
@@ -355,18 +355,17 @@ data %>%
   ggtitle("Distribución de puntuaciones de las 10 películas más valoradas",
           "Mapa de calor") +
   guides(fill = guide_legend(title = "Promedio de Valoraciones"))
+```
 
-# comentar que hay outliers
-# buscar outliers
+En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The pianist" y "Clueless". Ambas son puntuaciones dadas por un único usuario y restan información al conjunto del gráfico por ello se procede a su eliminación.
 
-data %>%
-  filter((Title == "The Pianist" & Year_D == 2002) | (Title == "Clueless" & Year_D == 1999))
+```{r score_dist_2, message = FALSE}
 
-# quitamos los outliers (falta arreglar codigo)
+# Quitamos los outliers
 data_2 <- data %>%
   filter((Title != "The Pianist" | Year_D != 2002), (Title != "Clueless" | Year_D != 1999))
   
-# rehacemos el gráfico
+# Rehacemos el gráfico
 data_2 %>%
   filter(Title %in% top10$Título) %>%
   group_by(Title, Year_D) %>%
@@ -380,4 +379,7 @@ data_2 %>%
           "Mapa de calor") +
   guides(fill = guide_legend(title = "Promedio de Valoraciones"))
 ```
+
+Ahora se puede observar con mejor precisión la distribución de las puntuaciones de las diez películas más valoradas.
+
 
