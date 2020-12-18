@@ -12,6 +12,7 @@ library(tidyverse)
 library(lubridate)
 library(formattable)
 library(RColorBrewer)
+library(plotly)
 ```
 
 ## Importación y limpieza de los datos
@@ -382,4 +383,8 @@ data_2 %>%
 
 Ahora se puede observar con mejor precisión la distribución de las puntuaciones de las diez películas más valoradas.
 
+### Cosas a hacer ###
+Distancia? (Clusters entre individuos)
+¿Qué otros datos serían interesantes? Ej. Sexo, Edad, País...
+¿Otros análisis con los datos que ya tenemos?
 
