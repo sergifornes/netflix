@@ -420,43 +420,15 @@ users %>%
 # miramos outliers, solo hay 5 usuarios con más de 150 valoraciones
 users %>%
   filter(count > 150)
-
-users <- users %>%
-  mutate(p95 = ifelse(users$count <= quantile(users$count, 0.95), "p95", "!p95"),
-         p99 = ifelse(users$count <= quantile(users$count, 0.99), "p99", "!p99"))
-
-p95 <- users %>%
-  filter(p95 == "p95")
-
-no_p95 <- users %>%
-  filter(p95 == "!p95")
-
-p99 <- users %>%
-  filter(p99 == "p99")
-
-no_p99 <- users %>%
-  filter(p99 == "!p99")
-
-ggplot(users) +
-  geom_freqpoly(mapping = aes(x = mean_score, y = ..density.., color = p95))
-
-ggplot(users) +
-  geom_freqpoly(mapping = aes(x = mean_score, y = ..density.., color = p99))
-
-# ? o estandarizar?
-data %>%
-  mutate(p95 = ifelse(User %in% p95$User, "p95", "!p95")) %>%
-  group_by(Score, p95) %>%
-  ggplot() +
-  geom_bar(mapping = aes(x = Score, fill = p95), position = "dodge")
 ```
 
-## peliculas antiguas
+\
+
+## Análisis peliculas antiguas
 * Las pelis viejas se valoran más que las nuevas?
 * Y mejor?
 
 ### Cosas a hacer ###
-Distancia? (Clusters entre individuos)
-¿Qué otros datos serían interesantes? Ej. Sexo, Edad, País...
-¿Otros análisis con los datos que ya tenemos?
+¿Qué otros datos serían interesantes? Ej. Sexo, Edad, País, Productora cinematográfica...
+
 
