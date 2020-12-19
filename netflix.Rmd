@@ -12,7 +12,6 @@ library(tidyverse)
 library(lubridate)
 library(formattable)
 library(RColorBrewer)
-library(plotly)
 ```
 
 ## Importación y limpieza de los datos
@@ -105,7 +104,7 @@ write_csv(df, "./model_netflix/pelis.csv")
 
 ## Análisis exploratorio de los datos
 
-Antes de empezar con el análisis, cargamos el data frame anteriormente creado y comprobamos que las variables estan en el formato correcto. 
+Antes de empezar con el análisis, cargamos el data frame anteriormente creado y comprobamos que las variables están en el formato correcto. 
 
 ```{r load, message = FALSE}
 data <- read_csv("./model_netflix/pelis.csv")
@@ -131,7 +130,7 @@ str(data)
 
 #### Distribución de películas estrenadas por año
 
-```{r movie_distr, message = FALSE, echo = FALSE}
+```{r movie_distr, message = FALSE}
 data %>%
   group_by(Release_Year, Title) %>%
   summarise() %>%
@@ -149,7 +148,7 @@ En el gráfico anterior vemos una tendencia creciente de las películas estrenad
 
 #### Creación de variables temporales
 
-A continuación, creamos nuevas variables temporales a partir de la fecha de valoración `Date`. Para cada valoración tendremos el año, el mes, el día, la semana y el día de la semana.
+A continuación, creamos nuevas variables temporales a partir de la fecha de valoración `Date`. Para cada valoración obtenemos el año, el mes, el día, la semana y el día de la semana.
 
 ```{r temp_variables}
 data <- data %>%
@@ -160,7 +159,6 @@ data <- data %>%
                                      "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")),
          Day_D = day(Date),
          Week_D = week(Date),
-         # tenemos en cuenta que el primer dia de la semana es Domingo en vez de Lunes
          Day_of_week_D = factor(wday(Date),
                                 levels = c(1,2,3,4,5,6,7),
                                 labels = c("Domingo", "Lunes", "Martes", "Miercoles", "Jueves",
@@ -171,7 +169,7 @@ data <- data %>%
 
 #### Información estadística de las valoraciones por película
 
-Creamos una tabla con los estadísticos principales de cada película.
+Creamos una tabla con la cantidad, la suma, la media, la mediana, la moda y la desviación típica de las valoraciones de cada película.
 
 ```{r films_table, message = FALSE}
 films_table <- data %>%
@@ -186,14 +184,13 @@ films_table <- data %>%
 
 Se ha usado el paquete `formattable` para personalizar la tabla:
 
-* *Cantidad de Valoraciones*: Se ha colocado una barra para cada película, la cual aumenta de tamaño en función de la cantidad de valoraciones que se le han hecho.
+* *Cantidad de Valoraciones*: Se ha colocado una barra para cada película, la cual aumenta de tamaño en función de la cantidad de valoraciones que tiene.
 
-* *Media*: La media de la valoración de cada película cambia de color en función de su valor. El rango de colores está entre el rojo (para los valores más bajos) y el verde (para los valores altos).
+* *Media*: La media de la valoración de cada película cambia de color en función de su valor. El rango de colores está entre el rojo (para los valores más bajos) y el verde (para los valores más altos).
 
 * *Desviación Típica*: El color de la desviación típica se verá con mayor intensidad cuando el valor sea alto, mientras que a penas será perceptible cuando el valor sea bajo.
 
 ```{r formattable, echo = T, max.height='100px'}
-  # es necesario instalar el paquete "formattable"
 films_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c"),
               list(mean_scores = color_tile("#FF7F7F", "#71CA97"),
@@ -206,13 +203,12 @@ films_table %>%
 
 #### Análisis de las 5 películas más valoradas
 
-Se realizan una serie de gráficos con el fin de observar de la mejor manera posible la distribución de las puntuaciones de las 5 películas más valoradas. Se ha creado un gráfico de barras agrupadas, un diagrama de cajas y bigotes y un mapa de calor.
+Se realizan una serie de gráficos con el fin de observar de la mejor manera posible la distribución de las puntuaciones de las 5 películas más valoradas. Se ha creado un gráfico de barras agrupadas, un diagrama de cajas y bigotes, y un mapa de calor.
 
 ```{r barplot, echo = TRUE}
 top5 <- films_table %>%
   top_n(5, count)
 
-# Barras
 data %>%
   filter(Title %in% top5$Title) %>%
   ggplot() +
@@ -227,7 +223,6 @@ data %>%
 En el gráfico anterior se observa como las puntuaciones positivas predominan sobre las negativas. Sería más interesante realizar y comparar gráficos de densidades, pero la puntuación contiene valores discretos, por lo que no es posible realizarlos.
 
 ```{r boxplot, echo = TRUE}
-# Cajas y bigotes
 data %>%
   filter(Title %in% top5$Title) %>%
   ggplot() +
@@ -241,7 +236,6 @@ data %>%
 Con el diagrama de cajas y bigotes se pueden observar claramente las posiciones de los cuartiles, aunque la visualización es un poco extraña debido al problema anteriormente mencionado de valores discretos.
 
 ```{r tile, echo = TRUE}
-# Mapa de calor
 data %>%
   filter(Title %in% top5$Title) %>%
   count(Title, Score) %>%
@@ -261,7 +255,8 @@ Usando un mapa de calor se visualiza la distribución de las puntuaciones de una
 
 #### Distribución de valoraciones por día de la semana y mes
 
-En primer lugar se analiza la cantidad de valoraciones, y posteriormente si los valores de estas cambian según la fecha. 
+En primer lugar se analiza la cantidad de valoraciones, y posteriormente si los valores de estas cambian según la fecha.
+
 ```{r day_bar_1}
 ggplot(data) +
   geom_bar(aes(x = Day_of_week_D), fill = "darkblue", col = "white") +
@@ -270,7 +265,7 @@ ggplot(data) +
   ggtitle("Distribución de las puntuaciones por día de la semana")
 ```
 
-En el gráfico anterior se puede observar que de lunes a viernes se puntuan más películas que durante el fin de semana. Una de las posibles causas es que durante el fin de semana los usuarios vean las películas acompañados por un grupo de amigos o tengan planes al acabar la película y por tanto no valoren la película al final de su visualización.
+En el gráfico anterior se puede observar que de lunes a viernes se puntuan más películas que durante el fin de semana. Una de las posibles causas es que durante el fin de semana los usuarios vean las películas acompañados por un grupo de amigos o tengan planes al acabar la película y por tanto no valoren la película al final de su visualización. Otra posible causa es que el uso de Netflix sea más frecuente entre semana, ya que la oferta de planes de ocio los fines de semana es mucho más amplia.
 
 ```{r day_bar_2}
 ggplot(data) +
@@ -283,7 +278,7 @@ ggplot(data) +
     scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
 ```
 
-Como se puede observar, el dia de la semana en la cual se visiona la película no tiene efecto sobre tu puntuación.
+Como se puede ver, el dia de la semana en el cual se visiona la película no tiene efecto sobre el valor de la puntuación.
 
 ```{r month_bar_1}
 ggplot(data) +
@@ -307,13 +302,14 @@ ggplot(data) +
   scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
 ```
 
-Mientras que el día de la semana en que se puntuó la película no afectaba a la puntuación, aquí se observa que desde junio hasta final de año la puntuación de las películas es más generosa. Por tanto, el mes en el que se puntuó la película tiene un efecto sobre la puntuación.
+Mientras que el día de la semana en que se puntuó la película no está correlacionado con la puntuación, aquí se observa que desde junio hasta final de año la puntuación de las películas es más generosa. Por tanto, el mes en el que se puntuó la película tiene relación con la puntuación.
 
 \
 
 #### Tabla agrupada por película y año del número de valoraciones
 
 Primero se genera una tabla con las 250 película y sus puntuaciones distribuidas desde 1999 hasta 2005.
+
 ```{r frec_table}
 frec_table <- as.data.frame.matrix(table(data$Title, data$Year_D)) %>%
   rownames_to_column("Título")
@@ -322,7 +318,7 @@ frec_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c", "c"))
 ```
 
-A continuación se escogen las diez películas con mayor número de valoraciones y se representa mediante un gráfico de calor:
+A continuación se escogen las diez películas con mayor número de valoraciones y se representa mediante un mapa de calor:
 
 ```{r top10_tile}
 top10 <- frec_table %>%
@@ -341,7 +337,13 @@ top10 %>%
   guides(fill = guide_legend(title = "Nº de Valoraciones"))
 ```
 
-#### Distribución del `score` promedio por año de las 10 películas con mayor número de valoraciones
+La cantidad de valoraciones de los primeros años es muy pequeña probablemente debido a dos factores: la película aun no estaba en Netflix y la cantidad de usuarios de la plataforma era mucho menor.
+
+\
+
+#### Distribución del `score` promedio por año de las 10 películas más valoradas
+
+Se crea un mapa de calor del promedio de las puntuaciones de las 10 películas anteriormente analizadas.
 
 ```{r score_dist, message = FALSE}
 data %>%
@@ -358,10 +360,16 @@ data %>%
   guides(fill = guide_legend(title = "Promedio de Valoraciones"))
 ```
 
-En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The pianist" y "Clueless". Ambas son puntuaciones dadas por un único usuario y restan información al conjunto del gráfico por ello se procede a su eliminación.
+En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The Pianist" y "Clueless". Nos fijamos en dichas observaciones:
+
+```{r}
+data %>%
+  filter((Title == "The Pianist" & Year_D == 2002) | (Title == "Clueless" & Year_D == 1999))
+```
+
+Ambas son puntuaciones dadas por un único usuario y distorsionan la información del gráfico, por ello se procede a su eliminación.
 
 ```{r score_dist_2, message = FALSE}
-
 # Quitamos los outliers
 data_2 <- data %>%
   filter((Title != "The Pianist" | Year_D != 2002), (Title != "Clueless" | Year_D != 1999))
@@ -381,7 +389,71 @@ data_2 %>%
   guides(fill = guide_legend(title = "Promedio de Valoraciones"))
 ```
 
-Ahora se puede observar con mejor precisión la distribución de las puntuaciones de las diez películas más valoradas.
+Ahora se puede observar con mayor precisión la distribución de las puntuaciones de las diez películas más valoradas.
+
+\
+
+#### Análisis del usuario
+
+```{r}
+users <- data %>%
+  group_by(User) %>%
+  summarise(count = n(),
+            mean_score = mean(Score))
+
+# OK
+users %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = count))
+
+# OK
+users %>%
+  ggplot() +
+  geom_point(mapping = aes(x = count, y = mean_score))
+
+# OK
+users %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = count, y = mean_score, group = cut_interval(count, 5)))
+# COMENTARIO: A mayor número de valoraciones, la nota media es menor. Puede ser debido a que sean más críticos o que vean películas de serie B.
+
+# miramos outliers, solo hay 5 usuarios con más de 150 valoraciones
+users %>%
+  filter(count > 150)
+
+users <- users %>%
+  mutate(p95 = ifelse(users$count <= quantile(users$count, 0.95), "p95", "!p95"),
+         p99 = ifelse(users$count <= quantile(users$count, 0.99), "p99", "!p99"))
+
+p95 <- users %>%
+  filter(p95 == "p95")
+
+no_p95 <- users %>%
+  filter(p95 == "!p95")
+
+p99 <- users %>%
+  filter(p99 == "p99")
+
+no_p99 <- users %>%
+  filter(p99 == "!p99")
+
+ggplot(users) +
+  geom_freqpoly(mapping = aes(x = mean_score, y = ..density.., color = p95))
+
+ggplot(users) +
+  geom_freqpoly(mapping = aes(x = mean_score, y = ..density.., color = p99))
+
+# ? o estandarizar?
+data %>%
+  mutate(p95 = ifelse(User %in% p95$User, "p95", "!p95")) %>%
+  group_by(Score, p95) %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = Score, fill = p95), position = "dodge")
+```
+
+## peliculas antiguas
+* Las pelis viejas se valoran más que las nuevas?
+* Y mejor?
 
 ### Cosas a hacer ###
 Distancia? (Clusters entre individuos)
