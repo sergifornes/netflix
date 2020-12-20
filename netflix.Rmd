@@ -4,6 +4,7 @@ author: "Daniel Ramos & Sergi Fornés"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include = FALSE}
@@ -190,7 +191,7 @@ Se ha usado el paquete `formattable` para personalizar la tabla:
 
 * *Desviación Típica*: El color de la desviación típica se verá con mayor intensidad cuando el valor sea alto, mientras que a penas será perceptible cuando el valor sea bajo.
 
-```{r formattable, echo = T, max.height='100px'}
+```{r formattable, eval = FALSE}
 films_table %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c"),
               list(mean_scores = color_tile("#FF7F7F", "#71CA97"),
@@ -272,10 +273,9 @@ ggplot(data) +
   geom_bar(aes(x = Day_of_week_D, fill = as.factor(Score)), position = "fill") +
   xlab("Día de la semana") +
   ylab("Proporción") +
-  ggtitle("Distribución de los valores 
-          de las puntuaciones por día de la semana") +
+  ggtitle("Distribución de los valores de las puntuaciones por día de la semana") +
   guides(fill = guide_legend(title = "Valoraciones")) +
-    scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
+  scale_fill_manual(values = brewer.pal(n = 5, name = "YlGnBu"))
 ```
 
 Como se puede ver, el dia de la semana en el cual se visiona la película no tiene efecto sobre el valor de la puntuación.
@@ -314,8 +314,8 @@ Primero se genera una tabla con las 250 película y sus puntuaciones distribuida
 frec_table <- as.data.frame.matrix(table(data$Title, data$Year_D)) %>%
   rownames_to_column("Título")
 
-frec_table %>%
-  formattable(align = c("l", "c", "c", "c", "c", "c", "c", "c"))
+#frec_table %>%
+#  formattable(align = c("l", "c", "c", "c", "c", "c", "c", "c"))
 ```
 
 A continuación se escogen las diez películas con mayor número de valoraciones y se representa mediante un mapa de calor:
@@ -362,14 +362,14 @@ data %>%
 
 En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The Pianist" y "Clueless". Nos fijamos en dichas observaciones:
 
-```{r}
+```{r score_dist_2}
 data %>%
   filter((Title == "The Pianist" & Year_D == 2002) | (Title == "Clueless" & Year_D == 1999))
 ```
 
 Ambas son puntuaciones dadas por un único usuario y distorsionan la información del gráfico, por ello se procede a su eliminación.
 
-```{r score_dist_2, message = FALSE}
+```{r score_dist_3, message = FALSE}
 # Quitamos los outliers
 data_2 <- data %>%
   filter((Title != "The Pianist" | Year_D != 2002), (Title != "Clueless" | Year_D != 1999))
@@ -395,66 +395,91 @@ Ahora se puede observar con mayor precisión la distribución de las puntuacione
 
 #### Análisis del usuario
 
+A continuación, se analiza el comportamiento de los usuarios que han valorado al menos una película. 
+
 ```{r user_analysis, message = FALSE}
 users <- data %>%
   group_by(User) %>%
   summarise(count = n(),
             mean_score = mean(Score))
 
-# OK
-users %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = count))
-
-# OK
-users %>%
-  ggplot() +
-  geom_point(mapping = aes(x = count, y = mean_score))
-
-# OK
-users %>%
-  ggplot() +
-  geom_boxplot(mapping = aes(x = count, y = mean_score, group = cut_interval(count, 5)))
-# COMENTARIO: A mayor número de valoraciones, la nota media es menor. Puede ser debido a que sean más críticos o que vean películas de serie B.
-
-# miramos outliers, solo hay 5 usuarios con más de 150 valoraciones
-users %>%
-  filter(count > 150)
+ggplot(users) +
+  geom_histogram(mapping = aes(x = count), binwidth = 5, fill = "darkblue", col = "white") +
+  geom_vline(xintercept = quantile(users$count, 0.95), linetype = "dashed") +
+  geom_vline(xintercept = quantile(users$count, 0.99), linetype = "dashed") +
+  geom_text(aes(x = quantile(count, 0.99) + 20, y = 110000, label = "Percentil 99")) +
+  geom_text(aes(x = quantile(count, 0.95) + 20, y = 120000, label = "Percentil 95")) +
+  xlab("Nº de Valoraciones") +
+  ylab("Frecuencia") +
+  ggtitle("Usuarios por cantidad de valoraciones realizadas")
 ```
+
+En el histograma se observa claramente que la gran mayoría de usuarios han valorado pocas películas, parece que hay outliers a partir de 50 películas valoradas. Las rectas verticales son los percentiles 95 y 99.
+
+Vamos a ver como se distribuye la nota media de las valoraciones de los usuarios en función de la cantidad de películas valoradas.
+
+``` {r user_analysis_2}
+ggplot(users) +
+  geom_point(mapping = aes(x = count, y = mean_score), alpha = 0.3) +
+  xlab("Nº de Valoraciones") +
+  ylab("Valoración media") +
+  ggtitle("Valoración media de usuarios en función de su cantidad de valoraciones",
+          "Diagrama de dispersión")
+```
+
+No se ve con claridad ninguna relación, aunque parece que la varianza disminuye con la cantidad de películas valoradas. Para buscar algún tipo de relación se realiza un diagrama de cajas y bigotes, hemos observado que únicamente tenemos 5 usuarios que hayan valorado más de 150 películas, por lo que no los incluiremos en el diagrama.
+
+``` {r user_analysis_3}
+users %>%
+  filter(count < 150) %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = count, y = mean_score, group = cut(count, breaks = seq(0, 150, 25)))) +
+  xlab("Nº de Valoraciones") +
+  ylab("Valoración media") +
+  ggtitle("Valoración media de usuarios en función de su cantidad de valoraciones",
+          "Diagrama de cajas y bigotes")
+```
+
+Con este gráfico si que vemos como a mayor número de valoraciones, más baja es la nota media. Esto puede ser debido a que los usuarios que más valoren sean más críticos, por lo que votarán más a la baja. También puede ser que los individuos que hayan valorado pocas películas hayan valorado las mejores, así que su valoración media es alta.
 
 \
 
-#### Análisis peliculas antiguas
-* Las pelis viejas se valoran más que las nuevas?
-```{r old_movie_1, message = FALSE}
+#### Análisis de las películas por antiguedad
 
-old_movies <- data %>%
-  group_by(Score, Release_Year) %>%
-  summarise(count = n())
+Vamos a ver si las películas antiguas se valoras más o menos que las nuevas. Evidentemente se valoran más las películas actuales debido a que hay más, por lo que nos fijaremos en la cantidad media de valoraciones que tienen las películas.
 
-old_movies %>%
-  ggplot(aes(x = Release_Year, y = Score)) + 
-  geom_point(aes(size = count))
-#Se puntuan más las peliculas a partir del ~1985
-```
-
-* Y mejor?
-```{r old_movie_2, message= FALSE}
-old_movies_v2 <- data %>%
-  group_by(Release_Year) %>%
-  summarise(mean_score = mean(Score))
-
-old_movies_v2 %>%
+```{r old_movie, message = FALSE}
+data %>%
+  group_by(Title, Release_Year) %>%
+  summarise(count = n(), mean_score = mean(Score)) %>%
   ggplot() +
-  geom_boxplot(mapping = aes(x = Release_Year, y = mean_score, group = cut_interval(Release_Year, 5)))
-#Las películas más antiguas antes de 1960 tienen mejor score, pero también las ha visto menos gente.
+  geom_boxplot(mapping = aes(x = Release_Year, y = count, group = cut(Release_Year, breaks = seq(1925, 2005, 5)))) +
+  xlab("Año de estreno") +
+  ylab("Nº de Valoraciones") +
+  ggtitle("Cantidad de valoraciones de películas por año de estreno")
 ```
 
+Se observa que la mayoría de las películas no están muy valoradas, aunque hay algunas modernas que han sido extremadamente valoradas, sobretodo películas de los años 90 a la actualidad. Es interesante que, en este intervalo de tiempo, la mediana es igualmente muy baja; seguramente sea debido a que las películas estrella son muy valoradas, pero también hay una gran cantidad de películas poco conocidas. Cabe señalar que entre el 1980 y 1995 la mediana de las valoraciones es relativamente alta, puede que sea por la muestra aleatoria de 250 películas o porque Netflix solo ha adquirido las más populares de la época.
 
-#### Otros datos interesantes a incluir en un futuro dataset
-**Tengo que escribir esto mejor**
-A nivel de los usuarios sería interesante incluir datos como el sexo, la edad, el país de los usuarios y otros datos socioeconómicos con el fin de poder diferenciar mejor sus preferencias.
+Para terminar, buscamos alguna relación del valor de la valoración con el año de estreno de la película. La media se calcula a partir de todas las puntuaciones de las películas de ese año.
 
-A nivel de las películas también seria interesante ver el número total de visualizaciones que no han sido puntuadas, la productora cinematográfica a la cual pertenecen, la duración de la película...
+```{r old_movie_2, message = FALSE}
+data %>%
+  group_by(Release_Year) %>%
+  summarise(mean_score = mean(Score)) %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = Release_Year, y = mean_score, group = cut(Release_Year, breaks = seq(1925, 2005, 10)))) +
+  xlab("Año de estreno") +
+  ylab("Media de Valoraciones") +
+  ggtitle("Valor medio de las valoraciones por año de estreno")
+```
 
+Se observa que las películas más antiguas están mejor valoradas que las más recientes, aunque esto puede ser debido a que son películas de calidad, ya que sino Netflix no las incluiría en su catálogo. Aun así, son pocas las películas antiguas y tienen pocas visualizaciones, por lo que la media de las puntuaciones podría estar sesgada. Anteriormente hemos visto que las películas entre 1980 y 1995 han sido muy valoradas, y aquí vemos una tendencia positiva en sus puntuaciones.
 
+\
+
+#### Conclusiones
+
+Se ha analidado desde diferentes perspectivas los datos de las valoraciones de Netflix. En un futuro, sería interesante incluir datos como el sexo, la edad, el país de los usuarios y otros datos socioeconómicos con el fin de poder diferenciar mejor sus preferencias. A nivel de las películas también estaría bien ver el número total de visualizaciones que no han sido puntuadas, la productora cinematográfica a la cual pertenecen, la duración de la película... con el fin de analizar con mayor precisión las valoraciones de las películas.
+
+Para un futuro análisis, se podría aplicar algún modelo de agrupación o de predicción sobre los usuarios o las películas.
