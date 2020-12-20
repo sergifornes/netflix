@@ -395,7 +395,7 @@ Ahora se puede observar con mayor precisión la distribución de las puntuacione
 
 #### Análisis del usuario
 
-```{r}
+```{r user_analysis, message = FALSE}
 users <- data %>%
   group_by(User) %>%
   summarise(count = n(),
@@ -424,11 +424,37 @@ users %>%
 
 \
 
-## Análisis peliculas antiguas
+#### Análisis peliculas antiguas
 * Las pelis viejas se valoran más que las nuevas?
-* Y mejor?
+```{r old_movie_1, message = FALSE}
 
-### Cosas a hacer ###
-¿Qué otros datos serían interesantes? Ej. Sexo, Edad, País, Productora cinematográfica...
+old_movies <- data %>%
+  group_by(Score, Release_Year) %>%
+  summarise(count = n())
+
+old_movies %>%
+  ggplot(aes(x = Release_Year, y = Score)) + 
+  geom_point(aes(size = count))
+#Se puntuan más las peliculas a partir del ~1985
+```
+
+* Y mejor?
+```{r old_movie_2, message= FALSE}
+old_movies_v2 <- data %>%
+  group_by(Release_Year) %>%
+  summarise(mean_score = mean(Score))
+
+old_movies_v2 %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = Release_Year, y = mean_score, group = cut_interval(Release_Year, 5)))
+#Las películas más antiguas antes de 1960 tienen mejor score, pero también las ha visto menos gente.
+```
+
+
+#### Otros datos interesantes a incluir en un futuro dataset
+**Tengo que escribir esto mejor**
+A nivel de los usuarios sería interesante incluir datos como el sexo, la edad, el país de los usuarios y otros datos socioeconómicos con el fin de poder diferenciar mejor sus preferencias.
+
+A nivel de las películas también seria interesante ver el número total de visualizaciones que no han sido puntuadas, la productora cinematográfica a la cual pertenecen, la duración de la película...
 
 
