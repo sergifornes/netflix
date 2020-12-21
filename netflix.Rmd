@@ -460,7 +460,7 @@ data %>%
   geom_boxplot(mapping = aes(x = Release_Year,
                              y = count,
                              group = cut(Release_Year, breaks = seq(1925, 2005, 5)))) +
-  xlab("Año de estreno") +
+  xlab("Año") +
   ylab("Nº de Valoraciones") +
   ggtitle("Cantidad de valoraciones de películas por año de estreno")
 ```
@@ -477,7 +477,7 @@ data %>%
   geom_boxplot(mapping = aes(x = Release_Year,
                              y = mean_score,
                              group = cut(Release_Year, breaks = seq(1925, 2005, 10)))) +
-  xlab("Año de estreno") +
+  xlab("Año") +
   ylab("Media de Valoraciones") +
   ggtitle("Valor medio de las valoraciones por año de estreno")
 ```
