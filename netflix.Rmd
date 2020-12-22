@@ -193,8 +193,11 @@ Se ha usado el paquete `formattable` para personalizar la tabla:
 
 * *Desviación Típica*: El color de la desviación típica se verá con mayor intensidad cuando el valor sea alto, mientras que a penas será perceptible cuando el valor sea bajo.
 
+Debido a que se tiene un número relativamente grande de películas, se imprimirá la tabla con las primeras 20 filas.
+
 ```{r formattable}
 films_table %>%
+  head(20) %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c"),
               list(mean_scores = color_tile("#FF7F7F", "#71CA97"),
                    count = color_bar("lightgrey"),
@@ -312,13 +315,14 @@ Mientras que el día de la semana en que se puntuó la película no está relaci
 
 #### Tabla agrupada por película y año del número de valoraciones
 
-Primero se genera una tabla con las 250 películas y sus valoraciones distribuidas desde 1999 hasta 2005.
+Primero se genera una tabla con las 250 películas y sus valoraciones distribuidas desde 1999 hasta 2005. Únicamente se imprimen las 20 primeras filas de la tabla por los motivos anteriormente mencionados.
 
 ```{r frec_table}
 frec_table <- as.data.frame.matrix(table(data$Title, data$Year_D)) %>%
   rownames_to_column("Título")
 
 frec_table %>%
+  head(20) %>%
   formattable(align = c("l", "c", "c", "c", "c", "c", "c", "c"))
 ```
 
