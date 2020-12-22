@@ -17,17 +17,17 @@ library(RColorBrewer)
 
 ## Importación y limpieza de los datos
 
-Vamos a realizar el análisis a partir de datos sobre valoraciones de películas de Netflix. Los datos que nos pueden resultar más interesantes son los valores de las valoraciones, la cantidad de valoraciones que tiene cada película, la fecha de las valoraciones y la identificación de quien hace estas valoraciones.
+Se va a realizar el análisis a partir de datos sobre valoraciones de películas de Netflix. Los datos que pueden resultar más interesantes son los valores de las valoraciones, la cantidad de valoraciones que tiene cada película, la fecha de las valoraciones y la identificación de quien hace estas valoraciones.
 
-Obtenemos los datos a partir de 5 ficheros `.txt` y un `.csv`. \
+Se obtienen los datos a partir de 5 ficheros `.txt` y un `.csv`. \
 
 ### `combined_data_x.txt`
 
-Tenemos a nuestra disposición 4 ficheros de este tipo: `combined_data_1.txt`, `combined_data_2.txt`, `combined_data_3.txt` y `combined_data_4.txt`. En estos ficheros hay información sobre valoraciones numéricas puestas por usuarios a películas de Netflix. Cada bloque de valoraciones está precedido por un número que indica la película (ID de la película). Para cada película existe un conjunto de valoraciones, de las cuales tenemos información sobre la fecha de la valoración, la nota (del 1 al 5) y un identificador del usuario. \
+Se dispone de 4 ficheros de este tipo: `combined_data_1.txt`, `combined_data_2.txt`, `combined_data_3.txt` y `combined_data_4.txt`. En estos ficheros hay información sobre valoraciones numéricas puestas por usuarios a películas de Netflix. Cada bloque de valoraciones está precedido por un número que indica la película (ID de la película). Para cada película existe un conjunto de valoraciones, de las cuales se tiene información sobre la fecha de la valoración, la nota (del 1 al 5) y un identificador del usuario. \
 
 ### `filas_ID_combined_all.txt`
 
-En este fichero tenemos la localización de los bloques de valoraciones por películas en los ficheros `combined_data_x.txt`.
+En este fichero se encuentra la localización de los bloques de valoraciones por películas en los ficheros `combined_data_x.txt`.
 
 Columnas del fichero: 
 
@@ -43,18 +43,18 @@ Columnas del fichero:
 
 ### `movie_titles.csv`
 
-En este archivo podemos encontrar información sobre las películas. Tenemos el ID de la película, su año de estreno y su título.
+En este archivo se puede encontrar información sobre las películas. En él se encuentra el ID de la película, su año de estreno y su título.
 
 ### Obtención de las peliculas de interés
 
-Decidimos las películas que vamos a analizar usando como semilla aleatoria nuestras dos últimas cifras del DNI concatenadas.
+Se deciden las películas que van a analizarse usando como semilla aleatoria las dos últimas cifras del DNI concatenadas.
 
 ```{r random, eval = FALSE}
 set.seed(3793)
 rand_pelis <- sort(sample(1:17770, 250, replace = FALSE))
 ```
 
-Obtenemos del fichero `filas_ID_combined_all.txt` únicamente la información de las películas que nos ha tocado analizar.
+Se obtiene del fichero `filas_ID_combined_all.txt` únicamente la información de las películas escogidas aleatoriamente.
 
 ```{r loc_pelis, eval = FALSE}
 loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") %>%
@@ -63,7 +63,7 @@ loc_pelis <- read_csv("../data/filas_ID_combined_all.txt", col_types = "ciiii") 
 
 ### Creación del data frame
 
-De cada uno de los archivos `combined_data_x.txt`, buscamos las valoraciones de las películas que analizaremos y las metemos en un data frame, especificando en cada observación cual es el ID de la película valorada.
+De cada uno de los archivos `combined_data_x.txt`,se buscan las valoraciones de las películas escogidas y se meten en un data frame, especificando en cada observación cual es el ID de la película valorada.
 
 ```{r search, eval = FALSE}
 i <- 1
@@ -83,7 +83,7 @@ for(comb_data in 1:4){
 }
 ```
 
-Cargamos el fichero con los nombres de las películas, teniendo en cuenta que el nombre de la película puede llevar `,`, y arreglamos los valores `NA`. Este nuevo data frame cuenta con el ID de cada película, por lo que podemos unirlo con el data frame de las valoraciones de los usuarios para ampliarlo con información sobre las películas. Después lo guardamos en un archivo `.csv` para poder cargarlo y analizarlo en la siguiente sección.
+Se carga el fichero con los nombres de las películas, teniendo en cuenta que el nombre de la película puede llevar `,`, y se arreglan los valores `NA`. Este nuevo data frame cuenta con el ID de cada película, por lo que se puede unir con el data frame de las valoraciones de los usuarios para ampliarlo con información sobre las películas. Después se guarda en un archivo `.csv` para poder cargarlo y analizarlo en la siguiente sección.
 
 ```{r write, eval = FALSE}
 names_pelis <- read_tsv("../data/movie_titles.csv",
@@ -105,7 +105,7 @@ write_csv(df, "./model_netflix/pelis.csv")
 
 ## Análisis exploratorio de los datos
 
-Antes de empezar con el análisis, cargamos el data frame anteriormente creado y comprobamos que las variables están en el formato correcto. 
+Antes de empezar con el análisis, se carga el data frame anteriormente creado y comprobamos que las variables están en el formato correcto. 
 
 ```{r load, message = FALSE}
 data <- read_csv("./model_netflix/pelis.csv")
@@ -115,13 +115,13 @@ str(data)
 
 **Tipología de las variables:**
 
-* `User`: Se puede considerar esta variable como categórica, ya que es un identificador del usuario que ha realizado la valoración. Pero al haber tantos usuarios diferentes, la dejaremos como variable tipo `num`.
+* `User`: Se puede considerar esta variable como categórica, ya que es un identificador del usuario que ha realizado la valoración. Pero al haber tantos usuarios diferentes, se deja como variable tipo `num`.
 
 * `Score`: Es una variable numérica que refleja la puntuación de la película de peor a mejor con valores enteros del 1 al 5. También podría ser considerada como una variable ordinal ya que sus valores son discretos, aunque para trabajar con ella es mejor dejarla tipo `num`.
 
 * `Date`: Es una variable tipo fecha, representa el día que se valoró la película.
 
-* `ID_film`: Esta variable tiene la misma forma que `User`, es decir, es una variable categórica que refleja la película valorada, pero la dejamos en formato `num`. Ya tenemos la variable `Title` para identificar las películas, por lo que realmente podríamos desechar esta variable. Pero es una manera más sencilla para acceder a las películas.
+* `ID_film`: Esta variable tiene la misma forma que `User`, es decir, es una variable categórica que refleja la película valorada, pero se deja en formato `num`. Ya se tiene la variable `Title` para identificar las películas, por lo que realmente se podría desechar esta variable. Pero es una manera más sencilla para acceder a las películas.
 
 * `Release_Year`: Se podría tener en formato `Date`, pero al ser únicamente el año, es más cómodo usarla como una variable tipo `num`.
 
@@ -145,13 +145,13 @@ data %>%
   scale_x_continuous(breaks = seq(1930, 2000, 10))
 ```
 
-En el gráfico anterior vemos una tendencia creciente de las películas estrenadas por año, sobretodo desde mediados de los 80 hasta los 2000. Una posible causa es que se ha abaratado mucho el proceso de crear películas en las últimas décadas, por lo que en la actualidad hay muchas más películas.
+En el gráfico anterior se observa una tendencia creciente de las películas estrenadas por año, sobretodo desde mediados de los 80 hasta los 2000. Una posible causa es que se ha abaratado mucho el proceso de crear películas en las últimas décadas, por lo que en la actualidad hay muchas más películas, también es muy probable que Netflix solo haya escogido películas antiguas que fueron éxitos de su época.
 
 \
 
 #### Creación de variables temporales
 
-A continuación, creamos nuevas variables temporales a partir de la fecha de valoración `Date`. Para cada valoración obtenemos el año, el mes, el día, la semana y el día de la semana.
+A continuación, se crean nuevas variables temporales a partir de la fecha de valoración `Date`. Para cada valoración se obtiene el año, el mes, el día, la semana y el día de la semana.
 
 ```{r temp_variables}
 data <- data %>%
@@ -172,7 +172,7 @@ data <- data %>%
 
 #### Información estadística de las valoraciones por película
 
-Creamos una tabla con la cantidad, la suma, la media, la mediana, la moda y la desviación típica de las valoraciones de cada película.
+Se crea una tabla con la cantidad, la suma, la media, la mediana, la moda y la desviación típica de las valoraciones de cada película.
 
 ```{r films_table, message = FALSE}
 films_table <- data %>%
@@ -366,7 +366,7 @@ data %>%
   guides(fill = guide_legend(title = "Promedio de Valoraciones"))
 ```
 
-En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The Pianist" y "Clueless". Nos fijamos en dichas observaciones:
+En el gráfico anterior se pueden observar 2 outliers, en concreto, en las películas "The Pianist" y "Clueless". Se muestran dichas observaciones:
 
 ```{r score_dist_2}
 data %>%
@@ -444,7 +444,7 @@ users %>%
           "Diagrama de cajas y bigotes")
 ```
 
-Con este gráfico si que se ve como a mayor número de valoraciones, más baja es la nota media. Esto puede ser debido a que los usuarios que más valoren sean más críticos, por lo que votarán más a la baja. También puede ser que los individuos que hayan valorado pocas películas hayan valorado las mejores, así que su valoración media es alta.
+Con este gráfico si que se observa como a mayor número de valoraciones, más baja es la nota media. Esto puede ser debido a que los usuarios que más valoren sean más críticos, por lo que votarán más a la baja. También puede ser que los individuos que hayan valorado pocas películas hayan valorado las mejores, así que su valoración media es alta.
 
 \
 
@@ -482,12 +482,12 @@ data %>%
   ggtitle("Valor medio de las valoraciones por año de estreno")
 ```
 
-Se ouede ver que las películas más antiguas están mejor valoradas que las más recientes, aunque esto puede ser debido a que son películas de calidad, ya que sino Netflix no las incluiría en su catálogo. Aun así, son pocas las películas antiguas y tienen pocas visualizaciones, por lo que la media de las puntuaciones podría estar sesgada. Anteriormente hemos visto que las películas entre 1980 y 1995 han sido muy valoradas, y aquí vemos una tendencia positiva en sus puntuaciones.
+Se puede ver que las películas más antiguas están mejor valoradas que las más recientes, aunque esto puede ser debido a que son películas de calidad, ya que sino Netflix no las incluiría en su catálogo. Aun así, son pocas las películas antiguas y tienen pocas visualizaciones, por lo que la media de las puntuaciones podría estar sesgada. Anteriormente hemos visto que las películas entre 1980 y 1995 han sido muy valoradas, y aquí vemos una tendencia positiva en sus puntuaciones.
 
 \
 
 #### Conclusiones
 
-Se ha analizado desde diferentes perspectivas los datos de las valoraciones de Netflix. En un futuro, sería interesante incluir datos como el sexo, la edad, el país de los usuarios y otros datos socioeconómicos con el fin de poder diferenciar mejor sus preferencias. A nivel de las películas también estaría bien ver el número total de visualizaciones que no han sido puntuadas, la productora cinematográfica a la cual pertenecen, la duración de la película... con el fin de analizar con mayor precisión las valoraciones de las películas.
+Se ha analizado desde diferentes perspectivas los datos de las valoraciones de Netflix. En un futuro, sería interesante incluir datos como el sexo, la edad, el país de los usuarios y otros datos socioeconómicos con el fin de poder diferenciar mejor sus preferencias. A nivel de las películas también estaría bien observar el número total de visualizaciones que no han sido puntuadas, la productora cinematográfica a la cual pertenecen, la duración de la película... con el fin de analizar con mayor precisión las valoraciones de las películas.
 
 Para un futuro análisis, se podría aplicar algún modelo de agrupación o de predicción sobre los usuarios o las películas.
